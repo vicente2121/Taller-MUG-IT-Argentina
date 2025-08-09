@@ -1,0 +1,41 @@
+import fabric.functions as fn
+from datetime import datetime
+
+udf = fn.UserDataFunctions()
+
+@udf.connection(argName="sqlDB", alias="SQLEliminar")
+@udf.function()
+def insertar(sqlDB: fn.FabricSqlConnection,
+                       region: str,
+                       retailer: str,
+                       comentario: str) -> str:
+
+    if not region or not retailer or not comentario:
+        raise fn.UserThrownError("Todos los campos (Región, retailer y comentario) son obligatorios.", {
+            "Region": region,
+            "Retailer": retailer,
+            "Comentario": comentario
+        })
+
+    invoicedate = datetime.utcnow().isoformat()
+    
+    insert_query = """
+        INSERT INTO [dbo].[SportProducts] (
+            [Region],
+            [Retailer],
+            [Comentario],
+            [Invoice Date]
+        ) VALUES (?, ?, ?, ?)
+    """
+
+   # Establecer conexión y ejecutar la consulta
+    connection = sqlDB.connect()
+    cursor = connection.cursor()
+    try:
+        cursor.execute(insert_query, (region, retailer, comentario, invoicedate))
+        connection.commit()
+    finally:
+        connection.close()
+
+
+    return "Se inserto el registro"
