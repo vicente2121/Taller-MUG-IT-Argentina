@@ -1,0 +1,35 @@
+import fabric.functions as fn
+
+udf = fn.UserDataFunctions()
+
+@udf.connection(argName="sqlDB", alias="SQLEliminar")
+@udf.function()
+def actualizar_ubicacion(sqlDB: fn.FabricSqlConnection,
+                         idunico: int,
+                         comentario: str) -> str:
+
+    if not comentario :
+        raise fn.UserThrownError("Todos los campos (Comentario) son obligatorios.", {
+            "comentario": comentario
+        })
+
+    connection = sqlDB.connect()
+    cursor = connection.cursor()
+
+    update_query = """
+        UPDATE [dbo].[SportProducts]
+        SET [Comentario] = ?
+        WHERE [IDUNICO] = ?
+    """
+
+    cursor.execute(update_query, (comentario, idunico))
+
+    if cursor.rowcount == 0:
+        raise fn.UserThrownError("No se encontró ningún registro con ese IDUNICO.", {"IDUNICO": idunico})
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return f"Ubicación actualizada correctamente para IDUNICO {idunico}."
+
