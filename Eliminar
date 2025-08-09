@@ -1,0 +1,31 @@
+import fabric.functions as fn
+from datetime import datetime
+
+udf = fn.UserDataFunctions()
+
+@udf.connection(argName="sqlDB", alias="SQLEliminar")
+@udf.function()
+def Eliminar(sqlDB: fn.FabricSqlConnection,
+                                           idunico: int ) -> str:
+    
+    connection = sqlDB.connect()
+    cursor = connection.cursor()
+
+    # 1. Eliminar registro si se indica
+    if idunico:
+        delete_query = """
+            DELETE FROM [dbo].[SportProducts]
+            WHERE [IDUNICO] = ?
+        """
+        cursor.execute(delete_query, (idunico,))
+        if cursor.rowcount == 0:
+            raise fn.UserThrownError("No se encontró el IDUNICO para eliminar.", {"IDUNICO": idunico})
+
+    
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+
+    return f"Eliminado correctamente el registro "
